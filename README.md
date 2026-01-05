@@ -21,7 +21,7 @@ bash ./download/download_warmup_two_stage.sh
 ViT-S dinoV2 pretrained model can be found in https://huggingface.co/timm/vit_small_patch14_reg4_dinov2.lvd142m/tree/main, please download all files and put them into *./weights/vit_small_patch14_reg4_dinov2.lvd142m*
 
 The model weights are provided in *GitHub Releases*.
-# installations 
+# Installations 
 ```bash
 conda create -n drivoR python=3.8
 conda activate drivoR
@@ -31,7 +31,7 @@ pip install -e ./nuplan-devkit
 pip install -e .
 ```
 
-# training
+# Training
 
 ```bash
 cd drivoR
