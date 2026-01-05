@@ -1,0 +1,5 @@
+_target_: navsim.agents.dynamo.models.image_encoder.img_encoder.ImgEncoder
+model: resnet34
+num_feature_levels: 2
+embed_dims: ${agent.config.network.sensor_channels} 
+checkpoint_path: ${oc.env:NAVSIM_DEVKIT_ROOT}/../weights/resnet34.a1_in1k/model.safetensors

@@ -1,0 +1,4 @@
+_target_: navsim.agents.dynamo.models.fusion_encoders.image_cnn.ImageCNN
+input_dim: ${agent.config.network.sensor_channels} 
+latent_dim: ${agent.config.network.planner_channels} 
+checkpoint_path: weights/mobilenet_v3_small-047dcff4.pth

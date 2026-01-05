@@ -1,0 +1,6 @@
+_target_: navsim.agents.dynamo.models.ego_sensors_fusion.cat_linear_temporal.ConcatLinearFusion
+in_channels_sensors: ${agent.config.network.planner_channels} 
+in_channels_ego: ${agent.config.network.planner_channels}
+out_channels: ${agent.config.network.planner_channels}
+dropout: 0.0
+ego_dropout: 0.0

@@ -1,0 +1,5 @@
+
+_target_: navsim.agents.dynamo.models.planner_backbones.traj_planner.SimplePlannerBackbone
+hidden_sizes: [512, 256, 128, 64]
+out_size: [8, 3]
+pred_head: linear
