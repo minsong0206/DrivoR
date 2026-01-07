@@ -35,7 +35,7 @@ pip install -e .
 
 ```bash
 cd drivoR
-conda activate dynamov6_clean
+conda activate drivoR
 module load Ninja/1.11.1-GCCcore-12.2.0
 module load CUDA/12.1.1
 module load cuDNN/8.9.2.26-CUDA-12.1.1
@@ -119,7 +119,7 @@ python $NAVSIM_DEVKIT_ROOT/navsim/planning/script/run_training.py  \
 # Evaluation
 ```bash
 cd drivoR
-conda activate dynamov6_clean
+conda activate drivoR
 module load Ninja/1.11.1-GCCcore-12.2.0
 module load CUDA/12.1.1
 module load cuDNN/8.9.2.26-CUDA-12.1.1
