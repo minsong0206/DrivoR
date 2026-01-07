@@ -10,7 +10,7 @@ The code will be released soon.
 [**Project**]() |
 [**Paper**]()
 
-# data and weights
+# Data and weights
 
 Please download the navsim organize the generated data in the same way as [HERE](https://github.com/autonomousvision/navsim/blob/main/docs/install.md).
 ```bash
@@ -32,6 +32,11 @@ pip install -e .
 ```
 
 # Training
+
+cache train metrics for pdm score calculation:
+```bash
+python navsim/planning/script/run_training_metric_caching.py
+```
 
 ```bash
 cd drivoR
