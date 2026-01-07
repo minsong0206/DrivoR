@@ -48,7 +48,7 @@ export OPENSCENE_DATA_ROOT="/PATH/TO/drivoR/dataset"
 ```
 Cache train metrics for pdm score calculation:
 ```bash
-python navsim/planning/script/training_metric_caching.py
+python navsim/planning/script/run_train_metric_caching.py
 ```
 To train with 4xA100 and 10 epochs:
 
