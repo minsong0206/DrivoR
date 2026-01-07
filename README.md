@@ -33,11 +33,6 @@ pip install -e .
 
 # Training
 
-cache train metrics for pdm score calculation:
-```bash
-python navsim/planning/script/run_training_metric_caching.py
-```
-
 ```bash
 cd drivoR
 conda activate dynamov6_clean
@@ -51,7 +46,10 @@ export NAVSIM_EXP_ROOT="/PATH/TO/drivoR/exp"
 export NAVSIM_DEVKIT_ROOT="/PATH/TO/drivoR/"
 export OPENSCENE_DATA_ROOT="/PATH/TO/drivoR/dataset"
 ```
-
+Cache train metrics for pdm score calculation:
+```bash
+python navsim/planning/script/run_training_metric_caching.py
+```
 To train with 4xA100 and 10 epochs:
 
 For NAVSIM-v1 model:
