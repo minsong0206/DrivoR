@@ -131,7 +131,7 @@ export NAVSIM_DEVKIT_ROOT="/PATH/TO/drivoR/"
 export OPENSCENE_DATA_ROOT="/PATH/TO/drivoR/dataset"
 ```
 
- (i) [NAVMSIM-v1] **trained for 25 epochs with longer trajecotry loss**:
+ (i) [NAVSIM-v1] **trained for 25 epochs with longer trajecotry loss**:
 ```bash
 export SUBSCORE_PATH=$NAVSIM_EXP_ROOT
 python $NAVSIM_DEVKIT_ROOT/navsim/planning/script/run_pdm_score_multi_gpu.py \
@@ -158,7 +158,7 @@ python $NAVSIM_DEVKIT_ROOT/navsim/planning/script/run_pdm_score_multi_gpu.py \
 
 ```
 
- (ii) [NAVMSIM-v2] **train for 10 epochs** (You need to use [Navsim2 repo](https://github.com/autonomousvision/navsim) for evaluation: and copy the agent files, config to the evaluation repo.):
+ (ii) [NAVSIM-v2] **train for 10 epochs** (You need to use [Navsim2 repo](https://github.com/autonomousvision/navsim) for evaluation: and copy the agent files, config to the evaluation repo.):
 ```bash
 TRAIN_TEST_SPLIT=navhard_two_stage
 CACHE_PATH=$NAVSIM_EXP_ROOT/navhard_two_stage_metric_cache
