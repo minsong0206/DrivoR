@@ -63,13 +63,10 @@ class AgentLightningModule(pl.LightningModule):
         :param batch_idx: index of batch (ignored)
         :return: scalar loss
         """
-        if 'Pad' in self.agent.name():
+        if 'drivor' in self.agent.name() or "DrivoR" in self.agent.name():
             features, targets = batch
             # score,best_score=self.agent.inference(features, targets)
             predictions = self.agent.forward(features)
-            # if self.agent.b2d:
-            #     all_res=torch.cat([predictions["trajectory"][:,None],predictions["proposals"]],dim=1)
-            # else:
             all_chosen_trajectories = predictions["trajectory"][:,None]
             all_proposed_trajectories = predictions["proposals"]
             final_score, fake_best_score, proposal_scores, l2, trajectoy_scores = self.agent.compute_score(targets, all_chosen_trajectories)
@@ -125,9 +122,9 @@ class AgentLightningModule(pl.LightningModule):
         Used during the multi-gpu proccessing to parallelize the prediction of trajectories.
         NOTE: requires append_token_to_batch=True in the dataset used to instantiate the trainer.
         """
-        return self.predict_step_pad(batch, batch_idx)
+        return self.predict_step_drivor(batch, batch_idx)
 
-    def predict_step_pad(self, batch: Tuple[Dict[str, Tensor], Dict[str, Tensor], List[str]], batch_idx: int):
+    def predict_step_drivor(self, batch: Tuple[Dict[str, Tensor], Dict[str, Tensor], List[str]], batch_idx: int):
         features, targets, tokens = batch
         self.agent.eval()
         with torch.no_grad():

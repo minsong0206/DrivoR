@@ -10,13 +10,13 @@ hydra:
 defaults:
   - default_common
   - default_evaluation
-  - agent: pad_nommcv_agent
+  - agent: drivoR
   - _self_
   - override train_test_split: navtest
 
-"team_name": ke # The team name
-"authors": ke_guo # The team members
-"email": u3006612@connect.hku.hk # email of the corresponding team member
-"institution": ntu # affiliation of the team
-"country": Singapore # country or region of the team, e.g. China
+"team_name": Nan # The team name
+"authors": Nan # The team members
+"email": Nan # email of the corresponding team member
+"institution": Nan # affiliation of the team
+"country": Nan # country or region of the team, e.g. China
 

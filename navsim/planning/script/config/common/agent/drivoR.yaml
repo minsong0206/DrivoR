@@ -1,4 +1,4 @@
-_target_: navsim.agents.drivoR.pad_agent.PadAgent
+_target_: navsim.agents.drivoR.drivor_agent.DrivoRAgent
 
 config:
 
@@ -42,7 +42,6 @@ config:
 
   ####################
   # image branch params
-  # image_size: [770, 448] # input image size
   image_size: [1148, 672] # input image size
   
   image_backbone:
@@ -98,7 +97,7 @@ config:
 
 
 loss:
-  _target_: navsim.agents.drivoR.layers.losses.pad_loss.PadLoss
+  _target_: navsim.agents.drivoR.layers.losses.drivor_loss.DrivoRLoss
   trajectory_weight: 1.0
   inter_weight: 0.0
   sub_score_weight: 0.0

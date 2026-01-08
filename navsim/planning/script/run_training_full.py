@@ -42,7 +42,6 @@ def build_datasets(cfg: DictConfig, agent: AbstractAgent) -> Tuple[Dataset, Data
         train_scene_filter.log_names = [
             log_name for log_name in train_scene_filter.log_names if log_name in cfg.train_logs or log_name in cfg.val_logs 
         ]
-        print('I am here')
     else:
         train_scene_filter.log_names = cfg.train_logs + cfg.val_logs
     

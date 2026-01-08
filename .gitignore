@@ -1,6 +1,6 @@
 __pycache__
 *.egg-info
-weights
+/weights/
 logs
 Bench2Drive/leaderboard/data
 /exp/

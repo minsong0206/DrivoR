@@ -1,4 +1,0 @@
-_target_: dynamo.models.ego_sensors_fusion.cat_linear.ConcatLinearFusion
-in_channels_sensors: ${model.network_variables.planner_channels} 
-in_channels_ego: ${model.network_variables.planner_channels}
-out_channels: ${model.network_variables.planner_channels}

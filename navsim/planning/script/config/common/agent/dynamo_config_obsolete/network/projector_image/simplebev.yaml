@@ -1,8 +1,0 @@
-_target_: navsim.agents.dynamo.models.projectors_image.simple_bev.SimpleBEVImageProjector
-fov: [[-50, -50, -5], [50, 50, 5]]
-voxel_grid: [100, 100, 8]
-grid_sample_optimization: python_loop
-bev_compressor:
-  _target_: navsim.agents.dynamo.models.projectors_image.simple_bev.BEVCompressor
-  channels: ${agent.config.network.sensor_channels} 
-  Z_dim: 8

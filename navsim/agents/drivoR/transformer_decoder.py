@@ -55,8 +55,6 @@ class Block(torch.nn.Module):
             mlp_layer: Type[torch.nn.Module] = Mlp,):
         super().__init__()
 
-        print("proj_drop in Transformer Block:", proj_drop)
-        print("drop_path in Transformer Block:", drop_path)
         # self attention layer
         self.self_attn_norm = norm_layer(dim)
         self.self_attn = Attention(
