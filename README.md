@@ -7,8 +7,8 @@ The code will be released soon.
 </p>
 
 
-[**Project**]() |
-[**Paper**]()
+[**Project**](https://valeoai.github.io/driving-on-registers/) |
+[**Paper**](https://arxiv.org/abs/2601.05083)
 
 # Data and weights
 
