@@ -1,6 +1,5 @@
 # DrivoR: Driving on Registers
 DrivoR: an end-to-end driving model by driving on registers.
-The code will be released soon.
 
 <p align="center">
   <img src="/assets/architecture.jpg" alt="Pipeline">
@@ -116,6 +115,11 @@ python $NAVSIM_DEVKIT_ROOT/navsim/planning/script/run_training.py  \
 ```
 
 # Evaluation
+Cache train metrics for pdm score calculation:
+```bash
+bash scripts/evaluation/run_metric_caching.sh
+```
+
 ```bash
 cd drivoR
 conda activate drivoR
