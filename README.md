@@ -1,4 +1,7 @@
 # [CVPR2026] DrivoR: Driving on Registers
+
+Add : BEV Semantic map 
+
 DrivoR: an end-to-end driving model by driving on registers.
 
 <p align="center">
