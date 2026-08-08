@@ -391,3 +391,26 @@ The code takes inspiration from https://github.com/Kguo-cs/iPad.
 The NAVSIM-v2 evaluation code is adopted from https://github.com/autonomousvision/navsim.
 
 The scaling experiments are based on the data from https://github.com/OpenDriveLab/SimScale.
+
+## 내가 수정한 부분
+
+> 2026-08-08 기준, GitHub 업로드를 준비하면서 로컬 변경 사항을 정리했습니다.
+
+### 주요 변경
+
+- DrivoR agent, feature extraction, map head, scorer, PDM scorer, training loop를 NAVSIM/HUGSIM 연동 실험에 맞게 수정했습니다.
+- agent/training YAML 기본 설정을 로컬 학습 및 export 흐름에 맞게 조정했습니다.
+- BEV export 유틸과 HUGSIM client adapter를 추가했습니다.
+- `download_navtrain.sh`와 training entry point를 로컬 데이터 경로/실험 흐름에 맞게 보완했습니다.
+
+### 추가한 로컬 파일
+
+- `drivor_e2e.sh`
+- `hugsim_drivor_client.py`, `hugsim_drivor_client_raw.py`
+- `navsim/agents/drivoR/utils/bev_export.py`
+- `navsim/planning/script/run_export_bev_png.py`
+- `practice.py`
+
+### 업로드 전 주의
+
+- `datasets/`, `outputs/`, `navsim_origin/`, `navtrain_current_1.tgz`는 대용량/생성 데이터라 기본적으로 커밋하지 않습니다.

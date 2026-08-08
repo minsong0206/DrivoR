@@ -27,6 +27,34 @@ from navsim.planning.training.abstract_feature_target_builder import (
 from PIL import Image
 from scipy.interpolate import CubicSpline
 
+
+DEFAULT_NUM_BOUNDING_BOXES = 64
+DEFAULT_BEV_SEMANTIC_FRAME = (64, 64)
+DEFAULT_BEV_RADIUS = 64.0
+DEFAULT_BEV_PIXEL_SIZE = 1.0
+DEFAULT_BEV_PIXEL_WIDTH = DEFAULT_BEV_SEMANTIC_FRAME[1]
+DEFAULT_BEV_SEMANTIC_NUM_CLASSES = 20
+DEFAULT_BEV_SEMANTIC_CLASSES = {
+    1: ("polygon", [SemanticMapLayer.ROADBLOCK, SemanticMapLayer.INTERSECTION, SemanticMapLayer.CARPARK_AREA]),
+    2: ("polygon", [SemanticMapLayer.LANE, SemanticMapLayer.LANE_CONNECTOR]),
+    3: ("polygon", [SemanticMapLayer.CROSSWALK]),
+    4: ("polygon", [SemanticMapLayer.WALKWAYS]),
+    5: ("polygon", [SemanticMapLayer.STOP_LINE]),
+    6: ("linestring", [SemanticMapLayer.BASELINE_PATHS]),
+    7: ("box", [TrackedObjectType.VEHICLE]),
+    8: ("box", [TrackedObjectType.PEDESTRIAN]),
+    9: ("box", [TrackedObjectType.BICYCLE]),
+    10: ("box", [TrackedObjectType.TRAFFIC_CONE]),
+    11: ("box", [TrackedObjectType.BARRIER]),
+    12: ("box", [TrackedObjectType.CZONE_SIGN]),
+}
+
+
+def _config_with_default(config: Dict, key: str, default):
+    value = getattr(config, key, None)
+    return default if value is None else value
+
+
 class DrivoRFeatureBuilder(AbstractFeatureBuilder):
     def __init__(self, config: Dict):
         self._config = config
@@ -199,6 +227,19 @@ class DrivoRFeatureBuilder(AbstractFeatureBuilder):
 class DrivoRTargetBuilder(AbstractTargetBuilder):
     def __init__(self, config: Dict):
         self._config = config
+        self._num_bounding_boxes = _config_with_default(config, "num_bounding_boxes", DEFAULT_NUM_BOUNDING_BOXES)
+        self._bev_semantic_frame = tuple(
+            _config_with_default(config, "bev_semantic_frame", DEFAULT_BEV_SEMANTIC_FRAME)
+        )
+        self._bev_radius = _config_with_default(config, "bev_radius", DEFAULT_BEV_RADIUS)
+        self._bev_pixel_size = _config_with_default(config, "bev_pixel_size", DEFAULT_BEV_PIXEL_SIZE)
+        self._bev_pixel_width = _config_with_default(config, "bev_pixel_width", DEFAULT_BEV_PIXEL_WIDTH)
+        self._bev_semantic_classes = _config_with_default(
+            config, "bev_semantic_classes", DEFAULT_BEV_SEMANTIC_CLASSES
+        )
+        self._bev_semantic_num_classes = _config_with_default(
+            config, "bev_semantic_num_classes", DEFAULT_BEV_SEMANTIC_NUM_CLASSES
+        )
 
     def get_unique_name(self) -> str:
         """Inherited, see superclass."""
@@ -212,12 +253,13 @@ class DrivoRTargetBuilder(AbstractTargetBuilder):
                 num_trajectory_frames=self._config.trajectory_sampling.num_poses
             ).poses
         )
-        # frame_idx = scene.scene_metadata.num_history_frames - 1
-        # annotations = scene.frames[frame_idx].annotations
-        # ego_pose = StateSE2(*scene.frames[frame_idx].ego_status.ego_pose)
+        frame_idx = scene.scene_metadata.num_history_frames - 1
+        annotations = scene.frames[frame_idx].annotations
+        ego_pose = StateSE2(*scene.frames[frame_idx].ego_status.ego_pose)
 
-        # agent_states, agent_labels = self._compute_agent_targets(annotations)
-        # bev_semantic_map = self._compute_bev_semantic_map(annotations, scene.map_api, ego_pose)
+        agent_states, agent_labels = self._compute_agent_targets(annotations)
+
+        bev_semantic_map = self._compute_bev_semantic_map(annotations, scene.map_api, ego_pose)
 
         if self._config.long_trajectory_additional_poses > 0:
             try:
@@ -240,25 +282,31 @@ class DrivoRTargetBuilder(AbstractTargetBuilder):
                 return {
                     "trajectory": trajectory,
                     "trajectory_long": trajectory_long,
-                    "token":scene.scene_metadata.initial_token
+                    "agent_states": agent_states,
+                    "agent_labels": agent_labels,
+                    "bev_semantic_map": bev_semantic_map,
+                    "token":scene.scene_metadata.initial_token,
+                    "scene_name": scene.scene_metadata.scene_token,
                 }
             except:
                 return {
                     "trajectory": trajectory,
                     "trajectory_long": trajectory,
-                    # "agent_states": agent_states,
-                    # "agent_labels": agent_labels,
-                    # "bev_semantic_map": bev_semantic_map,
-                    "token":scene.scene_metadata.initial_token
+                    "agent_states": agent_states,
+                    "agent_labels": agent_labels,
+                    "bev_semantic_map": bev_semantic_map,
+                    "token":scene.scene_metadata.initial_token,
+                    "scene_name": scene.scene_metadata.scene_token,
                 }
         else:
 
             return {
                 "trajectory": trajectory,
-                # "agent_states": agent_states,
-                # "agent_labels": agent_labels,
-                # "bev_semantic_map": bev_semantic_map,
-                "token":scene.scene_metadata.initial_token
+                "agent_states": agent_states,
+                "agent_labels": agent_labels,
+                "bev_semantic_map": bev_semantic_map,
+                "token":scene.scene_metadata.initial_token,
+                "scene_name": scene.scene_metadata.scene_token,
             }
 
     def _compute_agent_targets(self, annotations: Annotations) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -268,10 +316,10 @@ class DrivoRTargetBuilder(AbstractTargetBuilder):
         :return: tuple of bounding box values and labels (binary)
         """
 
-        max_agents = self._config.num_bounding_boxes
+        max_agents = self._num_bounding_boxes
         agent_states_list: List[npt.NDArray[np.float32]] = []
 
-        def _xy_in_lidar(x: float, y: float, config: DrivoRConfig) -> bool:
+        def _xy_in_lidar(x: float, y: float, config) -> bool:
             return (config.lidar_min_x <= x <= config.lidar_max_x) and (
                 config.lidar_min_y <= y <= config.lidar_max_y
             )
@@ -318,8 +366,8 @@ class DrivoRTargetBuilder(AbstractTargetBuilder):
         :return: 2D torch tensor of semantic labels
         """
 
-        bev_semantic_map = np.zeros(self._config.bev_semantic_frame, dtype=np.int64)
-        for label, (entity_type, layers) in self._config.bev_semantic_classes.items():
+        bev_semantic_map = np.zeros(self._bev_semantic_frame, dtype=np.int64)
+        for label, (entity_type, layers) in self._bev_semantic_classes.items():
             if entity_type == "polygon":
                 entity_mask = self._compute_map_polygon_mask(map_api, ego_pose, layers)
             elif entity_type == "linestring":
@@ -328,7 +376,7 @@ class DrivoRTargetBuilder(AbstractTargetBuilder):
                 entity_mask = self._compute_box_mask(annotations, layers)
             bev_semantic_map[entity_mask] = label
 
-        return torch.Tensor(bev_semantic_map)
+        return torch.tensor(bev_semantic_map, dtype=torch.long)
 
     def _compute_map_polygon_mask(
         self, map_api: AbstractMap, ego_pose: StateSE2, layers: List[SemanticMapLayer]
@@ -342,9 +390,9 @@ class DrivoRTargetBuilder(AbstractTargetBuilder):
         """
 
         map_object_dict = map_api.get_proximal_map_objects(
-            point=ego_pose.point, radius=self._config.bev_radius, layers=layers
+            point=ego_pose.point, radius=self._bev_radius, layers=layers
         )
-        map_polygon_mask = np.zeros(self._config.bev_semantic_frame[::-1], dtype=np.uint8)
+        map_polygon_mask = np.zeros(self._bev_semantic_frame[::-1], dtype=np.uint8)
         for layer in layers:
             for map_object in map_object_dict[layer]:
                 polygon: Polygon = self._geometry_local_coords(map_object.polygon, ego_pose)
@@ -365,10 +413,14 @@ class DrivoRTargetBuilder(AbstractTargetBuilder):
         :param layers: map layers
         :return: binary mask as numpy array
         """
-        map_object_dict = map_api.get_proximal_map_objects(
-            point=ego_pose.point, radius=self._config.bev_radius, layers=layers
-        )
-        map_linestring_mask = np.zeros(self._config.bev_semantic_frame[::-1], dtype=np.uint8)
+        try:
+            map_object_dict = map_api.get_proximal_map_objects(
+                point=ego_pose.point, radius=self._bev_radius, layers=layers
+            )
+        except AssertionError:
+            # Some map backends do not expose line-string representations for all semantic layers.
+            return np.zeros(self._bev_semantic_frame, dtype=bool)
+        map_linestring_mask = np.zeros(self._bev_semantic_frame[::-1], dtype=np.uint8)
         for layer in layers:
             for map_object in map_object_dict[layer]:
                 linestring: LineString = self._geometry_local_coords(
@@ -390,7 +442,7 @@ class DrivoRTargetBuilder(AbstractTargetBuilder):
         :param layers: bounding box labels to include
         :return: binary mask as numpy array
         """
-        box_polygon_mask = np.zeros(self._config.bev_semantic_frame[::-1], dtype=np.uint8)#128,256
+        box_polygon_mask = np.zeros(self._bev_semantic_frame[::-1], dtype=np.uint8)
         for name_value, box_value in zip(annotations.names, annotations.boxes):
             agent_type = tracked_object_types[name_value]
             if agent_type in layers:
@@ -455,8 +507,8 @@ class DrivoRTargetBuilder(AbstractTargetBuilder):
         """
 
         # NOTE: remove half in backward direction
-        pixel_center = np.array([[0, self._config.bev_pixel_width / 2.0]])
-        coords_idcs = (coords / self._config.bev_pixel_size) + pixel_center
+        pixel_center = np.array([[0, self._bev_pixel_width / 2.0]])
+        coords_idcs = (coords / self._bev_pixel_size) + pixel_center
 
         return coords_idcs.astype(np.int32)
 

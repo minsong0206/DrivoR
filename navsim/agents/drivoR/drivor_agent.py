@@ -66,6 +66,7 @@ class DrivoRAgent(AbstractAgent):
             config,
             lr_args: dict,
             checkpoint_path: str = None,
+            enable_training_runtime: bool = True,
             loss: nn.Module = None,
             progress_bar: bool = True,
             scheduler_args: dict = None,
@@ -76,6 +77,7 @@ class DrivoRAgent(AbstractAgent):
         self._config = config
         self._lr_args = lr_args
         self._checkpoint_path = checkpoint_path
+        self._enable_training_runtime = enable_training_runtime
         self.progress_bar = progress_bar
         self.scheduler_args = scheduler_args
         self.batch_size = batch_size
@@ -87,7 +89,7 @@ class DrivoRAgent(AbstractAgent):
         if not cache_data:
             self._drivor_model = DrivoRModel(config)
 
-        if not cache_data and self._checkpoint_path == "": # only for training
+        if not cache_data and self._enable_training_runtime and self._checkpoint_path == "": # only for training
             self.bce_logit_loss = nn.BCEWithLogitsLoss()
             self.b2d = config.b2d
 
@@ -128,6 +130,18 @@ class DrivoRAgent(AbstractAgent):
 
             self.get_scores = get_scores
 
+            self.loss = loss
+        else:
+            self.bce_logit_loss = None
+            self.b2d = getattr(config, "b2d", False)
+            self.ray = False
+            self.worker = None
+            self.worker_map = None
+            self.train_metric_cache_paths_synthetic = None
+            self.test_metric_cache_paths_synthetic = None
+            self.train_metric_cache_paths = None
+            self.test_metric_cache_paths = None
+            self.get_scores = None
             self.loss = loss
             
 

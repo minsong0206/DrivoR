@@ -125,7 +125,11 @@ class AgentLightningModule(pl.LightningModule):
         return self.predict_step_drivor(batch, batch_idx)
 
     def predict_step_drivor(self, batch: Tuple[Dict[str, Tensor], Dict[str, Tensor], List[str]], batch_idx: int):
-        features, targets, tokens = batch
+        if len(batch) == 3:
+            features, targets, tokens = batch
+        else:
+            features, targets = batch
+            tokens = features["scenario_token"]
         self.agent.eval()
         with torch.no_grad():
             predictions = self.agent.forward(features)
@@ -133,8 +137,21 @@ class AgentLightningModule(pl.LightningModule):
             if self.for_viz:
                 all_proposed_trajectories = predictions["proposal_list"]
                 final_trajectories = predictions["proposals"]
-                _, _, final_scores, _, _ = self.agent.compute_score(targets, final_trajectories)
+                can_compute_scores = (
+                    getattr(self.agent, "test_metric_cache_paths", None) is not None
+                    or getattr(self.agent, "train_metric_cache_paths", None) is not None
+                )
+                if can_compute_scores:
+                    _, _, final_scores, _, _ = self.agent.compute_score(targets, final_trajectories)
+                else:
+                    final_scores = torch.zeros(
+                        final_trajectories.shape[0], final_trajectories.shape[1], dtype=torch.float32
+                    )
                 ego_status = features["ego_status"]
+                gt_bev_maps = targets.get("bev_semantic_map")
+                pred_bev_logits = predictions.get("bev_semantic_map")
+                pred_bev_maps = pred_bev_logits.argmax(dim=1) if pred_bev_logits is not None else None
+                scene_names = targets.get("scene_name")
         result = {}
         for index, (pose, token) in enumerate(zip(poses.cpu().numpy(), tokens)):
             proposal = Trajectory(pose)
@@ -144,7 +161,10 @@ class AgentLightningModule(pl.LightningModule):
                     'trajectory': proposal, 
                     'all_proposals': proposal_list, 
                     'all_proposal_scores': final_scores[index],
-                    'high_level_command': ego_status[index]
+                    'high_level_command': ego_status[index],
+                    'gt_bev_semantic_map': gt_bev_maps[index].cpu().numpy() if gt_bev_maps is not None else None,
+                    'pred_bev_semantic_map': pred_bev_maps[index].cpu().numpy() if pred_bev_maps is not None else None,
+                    'scene_name': scene_names[index] if scene_names is not None else None,
                 }
             else:
                 result[token] = {'trajectory': proposal}

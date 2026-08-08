@@ -1,8 +1,7 @@
 import torch.nn as nn
-# from ..bevformer.transformer_decoder import MyTransformeDecoder,MLP
-# from ..bevformer.transformer_decoder import MLP
 from ..layers.utils.mlp import MLP
-# from .map_head import MapHead
+from ..transformer_decoder import TransformerDecoder
+from .map_head import MapHead
 
 
 class Scorer(nn.Module):
@@ -97,11 +96,10 @@ class Scorer(nn.Module):
 
         if config.bev_agent:
             raise NotImplementedError
-            self._agent_head=MyTransformeDecoder(config,config.num_bounding_boxes,6,trajenc=False)
+            self._agent_head=TransformerDecoder(proj_drop=0.0, drop_path=0.0, config=config)
 
         if config.bev_map:
-            raise NotImplementedError
-            self.map_head=MapHead(config)
+            self.map_head = MapHead(config)
 
         self.poses_num=config.num_poses
         self.tf_d_model=config.tf_d_model
@@ -125,6 +123,9 @@ class Scorer(nn.Module):
         if self.double_score:
             pred_logit2 = self.pred_score2(proposal_feature).reshape(batch_size, -1, self.score_num)
 
+        if self.bev_map:
+            bev_semantic_map = self.map_head(bev_feature)
+
         if  self.training:
             if self.area_pred:
                 pred_area_logit = self.pred_area(bev_feature)
@@ -133,9 +134,6 @@ class Scorer(nn.Module):
 
             if self.agent_pred:
                 pred_agents_states = self.pred_col_agent(proposal_feature).reshape(batch_size,p_size,t_size,-1,2,9)
-
-            if self.bev_map:
-                bev_semantic_map = self.map_head(bev_feature)
 
             if self.bev_agent:
                 agents =self._agent_head(None,bev_feature)

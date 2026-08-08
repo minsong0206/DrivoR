@@ -21,11 +21,22 @@ force_cache_computation: false
 experiment_name: drivoR
 seed: 0 
 validation_run: false
+export_bev_png: false
+export_bev_max_samples: 4
+export_bev_include_compare: true
+export_bev_scene_name: scene-0038
+export_bev_scene_match_key: scene_name
+export_bev_scene_match_mode: contains
+export_bev_tokens: null
+export_bev_output_subdir: bev_exports
+export_bev_map_root: /home/ms/DrivoR/datasets/maps
+export_bev_scenario_path: /home/ms/HUGSIM/hf_release_new/scenarios/nuscenes/scene-0038-easy-00.yaml
+export_bev_scene_cfg_path: /home/ms/HUGSIM/hf_release_new/scenes/nuscenes/scene-0038/cfg.yaml
 
 dataloader:
   params:
     batch_size: 64 #number of samples per batch
-    num_workers: 16  # number of workers for data loading
+    num_workers: 0  # number of workers for data loading
     pin_memory: true  # pin memory for faster GPU transfer
     prefetch_factor: 4  # number of samples loaded in advance by each worker
 
@@ -39,7 +50,7 @@ trainer:
     limit_val_batches: 1.0  # how much of validation dataset to check (float = fraction, int = num_batches)
 
     accelerator: gpu  # distribution method
-    strategy: ddp #_find_unused_parameters_true
+    strategy: auto #_find_unused_parameters_true
     precision: 16-mixed  # floating point precision
     num_nodes: 1  # Number of nodes used for training
 
@@ -52,4 +63,4 @@ trainer:
     gradient_clip_algorithm: norm  # [value, norm] method to clip gradients
     default_root_dir: ${output_dir}
 
-train_ckpt_path: null
+train_ckpt_path: /home/ms/DrivoR/weights/release_checkpoints/nav1_30epochs_with_134k_simscale_bis_103ktrainval.pth

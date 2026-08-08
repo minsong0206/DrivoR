@@ -15,6 +15,8 @@ import torch.distributed as dist
 import pytorch_lightning as pl
 
 from navsim.agents.abstract_agent import AbstractAgent
+from navsim.agents.drivoR.utils.bev_export import export_prediction_dict
+from navsim.common import dataclasses as navsim_dataclasses
 from navsim.common.dataclasses import SceneFilter
 from navsim.common.dataloader import SceneLoader
 from navsim.planning.training.dataset import CacheOnlyDataset, Dataset
@@ -27,6 +29,14 @@ CONFIG_NAME = "default_training"
 
 def dist_ready():
     return dist.is_available() and dist.is_initialized()
+
+
+def set_map_root_from_cfg(cfg: DictConfig) -> None:
+    map_root = getattr(cfg, "export_bev_map_root", None) or os.environ.get("NUPLAN_MAPS_ROOT")
+    if map_root:
+        os.environ["NUPLAN_MAPS_ROOT"] = str(map_root)
+        navsim_dataclasses.NUPLAN_MAPS_ROOT = str(map_root)
+        logger.info("Using NUPLAN_MAPS_ROOT=%s", map_root)
 
 def build_datasets(cfg: DictConfig, agent: AbstractAgent) -> Tuple[Dataset, Dataset]:
     """
@@ -96,6 +106,7 @@ def main(cfg: DictConfig) -> None:
 
     pl.seed_everything(cfg.seed, workers=True)
     logger.info(f"Global Seed set to {cfg.seed}")
+    set_map_root_from_cfg(cfg)
 
     logger.info(f"Path where all results are stored: {cfg.output_dir}")
 
@@ -176,7 +187,8 @@ def main(cfg: DictConfig) -> None:
         predictions = trainer.predict(
             AgentLightningModule(agent=agent, for_viz=True),
             val_dataloader,
-            return_predictions=True
+            return_predictions=True,
+            ckpt_path=cfg.train_ckpt_path,
         )
 
         if dist_ready():
@@ -199,7 +211,19 @@ def main(cfg: DictConfig) -> None:
             for d in proc_prediction:
                 merged_predictions.update(d)
 
-        pickle.dump(predictions, open(dump_path, 'wb'))
+        pickle.dump(merged_predictions, open(dump_path, 'wb'))
+
+        if cfg.export_bev_png:
+            export_root = Path(cfg.output_dir) / cfg.export_bev_output_subdir / cfg.export_bev_scene_name
+            exported = export_prediction_dict(
+                predictions=merged_predictions,
+                output_root=export_root,
+                include_compare=cfg.export_bev_include_compare,
+                max_samples=cfg.export_bev_max_samples,
+                scene_name=None,
+                tokens=cfg.export_bev_tokens,
+            )
+            logger.info("Exported %d BEV PNG samples to %s", exported, export_root)
     else:
         logger.info("Starting Training")
         trainer.fit(
