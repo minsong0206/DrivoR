@@ -1,6 +1,6 @@
 # DrivoR HUGSIM Client
 
-[한국어](README_HUGSIM.ko.md)
+[한국어](README.md) | [Original DrivoR project README](README_DRIVOR.md)
 
 ---
 
@@ -39,15 +39,15 @@ specifically for HUGSIM integration (none of it exists in
   post-loop save/eval step differ.
 
 For everything else (base DrivoR/navsim model, training, upstream evaluation
-scripts like `eval.sh`/`metric_caching.sh`), see this repo's own
-[README.md](README.md) -- not duplicated here.
+scripts like `eval.sh`/`metric_caching.sh`), see this repo's original
+project doc [README_DRIVOR.md](README_DRIVOR.md) -- not duplicated here.
 
 ---
 
 ## 2. Installation
 
-Please refer to this repo's own [Installation](README.md#installations)
-instructions for the base DrivoR/navsim environment. In practice this fork's
+Please refer to this repo's [Installation](README_DRIVOR.md#installations)
+section in `README_DRIVOR.md` for the base DrivoR/navsim environment. In practice this fork's
 environment was migrated from `conda` to `uv` (`torch==2.1.0+cu121`);
 `drivor_e2e.sh` assumes that but reads the actual interpreter path from an
 env var, so any working DrivoR env works.
