@@ -23,6 +23,7 @@ OPENCV2IMU = np.array([[0, 0, 1], [-1, 0, 0], [0, -1, 0]])
 OPENCV2LIDAR = np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]])
 nusc_cameras = ['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_FRONT_LEFT', 'CAM_BACK']
 nuplan_cameras = ["cam_f0", "cam_r0", "cam_l0", "cam_b0"]
+feature_camera_order = ["cam_f0", "cam_b0", "cam_l0", "cam_r0"]
 
 _checkpoint_path = '/home/ms/DrivoR/weights/release_checkpoints/nav1_30epochs_with_134k_simscale_bis_103ktrainval.pth'
 _config_path = "/home/ms/DrivoR/navsim/planning/script/config/common/agent/drivoR.yaml"
@@ -144,14 +145,19 @@ def main(args):
     cnt = 0
     output_folder = os.path.join(args.output, 'drivor')
     os.makedirs(output_folder, exist_ok=True)
+    debug_dir = os.path.join(output_folder, 'debug_imgs')
+    os.makedirs(debug_dir, exist_ok=True)
 
     while True:
 
         with open(obs_pipe, "rb") as pipe:
             raw_data = pipe.read()
-            raw_data = pickle.loads(raw_data)
+        if not raw_data:
+            print('obs_pipe: empty read (server crashed?), exiting')
+            exit(1)
+        raw_data = pickle.loads(raw_data)
         print('received')
-        
+
         if raw_data == 'Done':
             print('Waiting for visualize tasks...')
             to_video(output_folder)
@@ -159,9 +165,16 @@ def main(args):
 
         obs, info = raw_data
 
+        # [DEBUG 1] raw HUGSIM pipe frames
+        for cam in nusc_cameras:
+            cv2.imwrite(
+                os.path.join(debug_dir, f'{cnt:04d}_1_hugsim_raw_{cam}.jpg'),
+                cv2.cvtColor(obs['rgb'][cam], cv2.COLOR_RGB2BGR)
+            )
+
         imgs = {}
         raw_imgs = {}
-        
+
         for cam in nusc_cameras:
             im = obs['rgb'][cam]
             print(f"[DEBUG] {cam}: {type(im)}, {im.shape if im is not None else 'NONE'}")
@@ -169,6 +182,13 @@ def main(args):
             resize_im = im
             raw_imgs[cam] = im
             imgs[cam] = resize_im
+
+        # [DEBUG 2] imgs[cam] right before create_cam
+        for cam in nusc_cameras:
+            cv2.imwrite(
+                os.path.join(debug_dir, f'{cnt:04d}_2_precam_{cam}.jpg'),
+                cv2.cvtColor(imgs[cam], cv2.COLOR_RGB2BGR)
+            )
 
         velo, acc = np.zeros(2), np.zeros(2)
         command = np.zeros(4)
@@ -211,6 +231,16 @@ def main(args):
         agent_input = AgentInput([ego_status], [cameras], [lidar])
     
         features = feature_builder.compute_features(agent_input)
+
+        # [DEBUG 3] features['image'] right before the DrivoR model
+        feat = features['image'].detach().cpu()  # (N_cam, C, H, W)
+        for i, cam_name in enumerate(feature_camera_order[:feat.shape[0]]):
+            img = feat[i].permute(1, 2, 0).numpy()  # (H, W, C)
+            img = (img - img.min()) / (img.max() - img.min() + 1e-8) * 255
+            cv2.imwrite(
+                os.path.join(debug_dir, f'{cnt:04d}_3_feature_{cam_name}.jpg'),
+                img.astype(np.uint8)
+            )
 
         features['image'] = features['image'].unsqueeze(0).cuda()
         features['cam_K'] = features['cam_K'].unsqueeze(0).cuda()
