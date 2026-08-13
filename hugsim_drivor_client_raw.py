@@ -25,8 +25,12 @@ nusc_cameras = ['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_FRONT_LEFT', 'CAM_BACK']
 nuplan_cameras = ["cam_f0", "cam_r0", "cam_l0", "cam_b0"]
 feature_camera_order = ["cam_f0", "cam_b0", "cam_l0", "cam_r0"]
 
-_checkpoint_path = '/home/ms/DrivoR/weights/release_checkpoints/nav1_30epochs_with_134k_simscale_bis_103ktrainval.pth'
-_config_path = "/home/ms/DrivoR/navsim/planning/script/config/common/agent/drivoR.yaml"
+_checkpoint_path = os.environ.get(
+    'DRIVOR_CHECKPOINT_PATH',
+    '<path/to/your/DrivoR>/weights/release_checkpoints/nav1_30epochs_with_134k_simscale_bis_103ktrainval.pth')
+_config_path = os.environ.get(
+    'DRIVOR_CONFIG_PATH',
+    '<path/to/your/DrivoR>/navsim/planning/script/config/common/agent/drivoR.yaml')
 
 def rt2pose(r, t, degrees=False):
     pose = np.eye(4)
