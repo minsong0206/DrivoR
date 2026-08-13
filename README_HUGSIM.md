@@ -13,7 +13,34 @@ The implementation is based on:
 
 ---
 
-## 1. Installation
+## 1. Changes vs. upstream `valeoai/DrivoR`
+
+This isn't a plain fork -- the following was added on top of upstream
+specifically for HUGSIM integration (none of it exists in
+[valeoai/DrivoR](https://github.com/valeoai/DrivoR)):
+
+- **`drivor_e2e.sh`** -- the launcher script `sim/utils/launch_ad.py::launch()`
+  calls on the HUGSIM side (`zsh ${shell_path} ${cuda_id} ${output}`); takes
+  `(cuda_id, output_dir)` as positional args and execs the client entry point
+  below.
+- **`hugsim_drivor_client_raw.py`** -- the actual entry point (confirmed:
+  `drivor_e2e.sh` execs this file, not the similarly-named
+  `hugsim_drivor_client.py` also present in this repo -- what that other file
+  is for isn't documented here). Talks to HUGSIM over the `obs_pipe`/
+  `plan_pipe` named pipes (§5), converts observations into DrivoR's model
+  input format, runs inference, writes the `(N, 2)` trajectory back.
+- On the **HUGSIM side** (separate repo), `closed_loop_drivor.py` was added
+  alongside `closed_loop.py` -- `closed_loop.py` itself only wires up
+  UniAD/VAD/LTF and wasn't reused since this client's obs/info shape and
+  post-loop save/eval step differ.
+
+For everything else (base DrivoR/navsim model, training, upstream evaluation
+scripts like `eval.sh`/`metric_caching.sh`), see this repo's own
+[README.md](README.md) -- not duplicated here.
+
+---
+
+## 2. Installation
 
 Please refer to this repo's own [Installation](README.md#installations)
 instructions for the base DrivoR/navsim environment. In practice this fork's
@@ -35,7 +62,7 @@ export DRIVOR_CONFIG_PATH=/path/to/your/DrivoR/navsim/planning/script/config/com
 
 ---
 
-## 2. Launch Client
+## 3. Launch Client
 
 ### Manually Launch
 
@@ -43,17 +70,41 @@ export DRIVOR_CONFIG_PATH=/path/to/your/DrivoR/navsim/planning/script/config/com
 zsh ./drivor_e2e.sh ${CUDA_ID} ${output_dir}
 ```
 
-### Auto Launch
+### Auto Launch (closed-loop evaluation)
 
-The client can be auto-launched by HUGSIM's closed-loop script --
-specifically `closed_loop_drivor.py --ad drivor` (**not** `closed_loop.py`,
-which only wires up UniAD/VAD/LTF), reading `drivor_path` from
-`configs/sim/<dataset>_base.yaml` in the HUGSIM repo (the same
-`{uniad,vad,ltf,drivor}_path` field every other client uses).
+In practice you don't call `drivor_e2e.sh` directly -- HUGSIM's closed-loop
+script launches it per scenario. Run this from the **HUGSIM repo** (inside
+its `hugsim_v3` docker environment, not this repo's env):
+
+```bash
+sim_cuda=0
+ad_cuda=1
+
+# your scenario yaml directory on the HUGSIM side
+scenario_dir=${SCENARIO_PATH}
+
+for cfg in ${scenario_dir}/*.yaml; do
+    echo ${cfg}
+    CUDA_VISIBLE_DEVICES=${sim_cuda} \
+    python closed_loop_drivor.py --scenario_path ${cfg} \
+                        --base_path ./configs/sim/${dataset_name}_base.yaml \
+                        --camera_path ./configs/sim/${dataset_name}_camera.yaml \
+                        --kinematic_path ./configs/sim/kinematic.yaml \
+                        --ad drivor \
+                        --ad_cuda ${ad_cuda}
+done
+```
+
+This is `closed_loop_drivor.py --ad drivor` (**not** `closed_loop.py`, which
+only wires up UniAD/VAD/LTF). It reads `drivor_path` from
+`configs/sim/<dataset>_base.yaml` -- point that at this repo's checkout (the
+same path you set as `DRIVOR_PATH` in §2 above), and it execs `drivor_e2e.sh`
+for you per scenario, feeding it through the `obs_pipe`/`plan_pipe` protocol
+in §5.
 
 ---
 
-## 3. Debug images
+## 4. Debug images
 
 `hugsim_drivor_client_raw.py` writes one debug frame per camera per
 simulation step under `${output_dir}/drivor/debug_imgs/`, split into three
@@ -69,7 +120,7 @@ Filenames are `{frame_idx:04d}_{cam_name}.jpg` within each folder.
 
 ---
 
-## 4. Protocol: how HUGSIM and this client talk to each other
+## 5. Protocol: how HUGSIM and this client talk to each other
 
 Every AD client (this one, UniAD_SIM, VAD_SIM, NAVSIM) is its own standalone
 repo/process -- HUGSIM never imports the AD algorithm's code directly. They
@@ -143,7 +194,7 @@ assumptions on the HUGSIM side first.
 
 ---
 
-## 5. Adding a different AD algorithm
+## 6. Adding a different AD algorithm
 
 If you want to swap DrivoR for a different model (or add a second one
 alongside it), the pattern to follow is exactly what UniAD_SIM/VAD_SIM/
@@ -161,7 +212,7 @@ into HUGSIM or into this repo**:
      don't exist yet (`os.mkfifo`)
    - loops: read `obs_pipe` -> `pickle.loads` -> if `'Done'`, clean up and
      exit -> else unpack `(obs, info)` -> build your model's input format
-     from the `obs`/`info` fields documented in §4 -> run inference -> pack
+     from the `obs`/`info` fields documented in §5 -> run inference -> pack
      the result as an `(N, 2)` `numpy.ndarray` -> `pickle.dumps` -> write to
      `plan_pipe`
 
@@ -190,7 +241,7 @@ into HUGSIM or into this repo**:
    creation, `'Done'` handling, `traj2control` accepting your trajectory
    shape) before wiring in real inference.
 
-No part of this protocol is DrivoR-specific -- everything in §4 is HUGSIM's
+No part of this protocol is DrivoR-specific -- everything in §5 is HUGSIM's
 own closed-loop contract, so a from-scratch client can be built by reading
 `closed_loop_drivor.py`/`closed_loop.py` on the HUGSIM side and this file's
-§4 without needing to understand DrivoR's own model code at all.
+§5 without needing to understand DrivoR's own model code at all.
