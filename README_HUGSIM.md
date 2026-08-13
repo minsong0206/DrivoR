@@ -1,5 +1,9 @@
 # DrivoR HUGSIM Client
 
+[한국어](README_HUGSIM.ko.md)
+
+---
+
 This repo (fork of [valeoai/DrivoR](https://github.com/valeoai/DrivoR)) is the
 implementation of a DrivoR test client for the
 [HUGSIM](https://github.com/hyzhou404/HUGSIM) closed-loop benchmark,

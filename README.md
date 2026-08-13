@@ -9,6 +9,12 @@ DrivoR: an end-to-end driving model by driving on registers.
 [**Project**](https://valeoai.github.io/driving-on-registers/) |
 [**Paper**](https://arxiv.org/abs/2601.05083)
 
+> **HUGSIM closed-loop client**: this fork also implements a DrivoR test
+> client for the [HUGSIM](https://github.com/hyzhou404/HUGSIM) closed-loop
+> benchmark -- see [README_HUGSIM.md](README_HUGSIM.md)
+> ([한국어](README_HUGSIM.ko.md)) for setup, the closed-loop eval command,
+> and debugging.
+
 # Updates
 :sparkles:  Driving on Registers is accepted to CVPR 2026!
 
