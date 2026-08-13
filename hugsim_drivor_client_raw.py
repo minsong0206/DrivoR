@@ -146,7 +146,11 @@ def main(args):
     output_folder = os.path.join(args.output, 'drivor')
     os.makedirs(output_folder, exist_ok=True)
     debug_dir = os.path.join(output_folder, 'debug_imgs')
-    os.makedirs(debug_dir, exist_ok=True)
+    debug_dir_raw = os.path.join(debug_dir, '1_hugsim_raw')
+    debug_dir_precam = os.path.join(debug_dir, '2_precam')
+    debug_dir_feature = os.path.join(debug_dir, '3_feature')
+    for d in (debug_dir_raw, debug_dir_precam, debug_dir_feature):
+        os.makedirs(d, exist_ok=True)
 
     while True:
 
@@ -168,7 +172,7 @@ def main(args):
         # [DEBUG 1] raw HUGSIM pipe frames
         for cam in nusc_cameras:
             cv2.imwrite(
-                os.path.join(debug_dir, f'{cnt:04d}_1_hugsim_raw_{cam}.jpg'),
+                os.path.join(debug_dir_raw, f'{cnt:04d}_{cam}.jpg'),
                 cv2.cvtColor(obs['rgb'][cam], cv2.COLOR_RGB2BGR)
             )
 
@@ -186,7 +190,7 @@ def main(args):
         # [DEBUG 2] imgs[cam] right before create_cam
         for cam in nusc_cameras:
             cv2.imwrite(
-                os.path.join(debug_dir, f'{cnt:04d}_2_precam_{cam}.jpg'),
+                os.path.join(debug_dir_precam, f'{cnt:04d}_{cam}.jpg'),
                 cv2.cvtColor(imgs[cam], cv2.COLOR_RGB2BGR)
             )
 
@@ -238,7 +242,7 @@ def main(args):
             img = feat[i].permute(1, 2, 0).numpy()  # (H, W, C)
             img = (img - img.min()) / (img.max() - img.min() + 1e-8) * 255
             cv2.imwrite(
-                os.path.join(debug_dir, f'{cnt:04d}_3_feature_{cam_name}.jpg'),
+                os.path.join(debug_dir_feature, f'{cnt:04d}_{cam_name}.jpg'),
                 img.astype(np.uint8)
             )
 
